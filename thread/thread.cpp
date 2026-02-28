@@ -12,13 +12,13 @@ int main()
 	stack.push("i say lalalalalalala");
 
 	stack.top() ? std::cout << *stack.top() << "\n" : std::cout << "Элемент не найден \n";
-	stack.pop();
+	if (!stack.pop()) std::cout << "Стек пуст\n";
+	
+	stack.top() ? std::cout << *stack.top() << "\n" : std::cout << "Элемент не найден \n";
+	if (!stack.pop()) std::cout << "Стек пуст\n";
 
 	stack.top() ? std::cout << *stack.top() << "\n" : std::cout << "Элемент не найден \n";
-	stack.pop();
-
-	stack.top() ? std::cout << *stack.top() << "\n" : std::cout << "Элемент не найден \n";
-	stack.pop();
+	if (!stack.pop()) std::cout << "Стек пуст\n";
 
 	/*std::thread t1([&stack, &str1]() { for (int i = 0; i < 30; ++i) { stack.push("communist cat say mao mao"); } });
 	std::thread t2([&stack, &str2]() { for (int i = 0; i < 30; ++i) { stack.push("fox say ???"); } });

@@ -21,12 +21,15 @@ private:
 
 public:
 
-	void pop() noexcept
+	std::optional<T> pop() noexcept
 	{
-		if(!values.empty())
-		{
-			values.pop_back();
+		if (values.empty()) {
+			return std::nullopt;
 		}
+
+		T result = std::move(values.back());  
+		values.pop_back();
+		return result;
 	}
 
 	void push(const T& value)
