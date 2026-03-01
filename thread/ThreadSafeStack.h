@@ -4,7 +4,6 @@
 
 //std::optional<T> top() const должен делать возврат по ссылке, чтобы не было лишнего копирования
 //реализовать метод emplace_back() 
-//сделать возврат значения в операции pop() 
 //потокобезопасность 
 
 
@@ -12,6 +11,7 @@
 
 #include <vector>
 #include <optional>
+#include <utility>
 
 template <typename T>
 class ThreadSafeStack
@@ -32,25 +32,29 @@ public:
 		return result;
 	}
 
-	void push(const T& value)
+
+	template <typename U>
+	void push(U&& value)
 	{
 		try
 		{
-			values.push_back(value);
+			values.push_back(std::forward<U>(value));
 		}
-		catch(std::bad_alloc exp)
+		catch(std::bad_alloc& exp)
 		{
 			std::cerr << "Стек переполнен, недостаточно памяти " << exp.what() << "\n";
 		}
 	}
 
-	void push(T&& value)
+
+	template <typename...Args>
+	void emplace(Args&&...args)
 	{
 		try
 		{
-			values.push_back(std::move(value));
+			values.emplace_back(std::forward<Args>(args)...);
 		}
-		catch (std::bad_alloc exp)
+		catch (std::bad_alloc& exp)
 		{
 			std::cerr << "Стек переполнен, недостаточно памяти " << exp.what() << "\n";
 		}
