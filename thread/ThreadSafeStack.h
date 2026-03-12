@@ -3,7 +3,6 @@
 */
 
 //std::optional<T> top() const должен делать возврат по ссылке, чтобы не было лишнего копирования
-//реализовать метод emplace_back() 
 //потокобезопасность 
 
 
@@ -12,17 +11,21 @@
 #include <vector>
 #include <optional>
 #include <utility>
+#include <mutex>
+#include <functional>
 
 template <typename T>
 class ThreadSafeStack
 {
 private:
 	std::vector<T> values;
+	mutable std::mutex mutex;
 
 public:
 
 	std::optional<T> pop() noexcept
 	{
+		std::lock_guard<std::mutex> lock(mutex);
 		if (values.empty()) {
 			return std::nullopt;
 		}
@@ -36,47 +39,46 @@ public:
 	template <typename U>
 	void push(U&& value)
 	{
-		try
-		{
-			values.push_back(std::forward<U>(value));
-		}
-		catch(std::bad_alloc& exp)
-		{
-			std::cerr << "Стек переполнен, недостаточно памяти " << exp.what() << "\n";
-		}
+		std::lock_guard<std::mutex> lock(mutex);
+		values.push_back(std::forward<U>(value));
 	}
 
 
 	template <typename...Args>
 	void emplace(Args&&...args)
 	{
-		try
-		{
-			values.emplace_back(std::forward<Args>(args)...);
-		}
-		catch (std::bad_alloc& exp)
-		{
-			std::cerr << "Стек переполнен, недостаточно памяти " << exp.what() << "\n";
-		}
+		std::lock_guard<std::mutex> lock(mutex);
+		values.emplace_back(std::forward<Args>(args)...);
 	}
 
-	std::optional<T> top() const 
+	std::optional<T> top() const&
 	{
+		std::lock_guard<std::mutex> lock(mutex);
 		return !values.empty() ? std::optional<T>(values.back()) : std::nullopt;
+	}
+
+	std::optional<std::reference_wrapper<const T>> top() const&& {
+		std::lock_guard<std::mutex> lock(mutex);
+		return !values.empty()
+			? std::optional<std::reference_wrapper<const T>>(std::cref(values.back()))
+			: std::nullopt;
 	}
 
 	bool empty() const noexcept
 	{
+		std::lock_guard<std::mutex> lock(mutex);
 		return values.empty();
 	}
 
 	size_t size() const noexcept
 	{
+		std::lock_guard<std::mutex> lock(mutex);
 		return values.size();
 	}
 
 	void clear() noexcept
 	{
+		std::lock_guard<std::mutex> lock(mutex);
 		values.clear();
 	}
 };

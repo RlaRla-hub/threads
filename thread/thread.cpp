@@ -32,10 +32,14 @@ int main()
 	result ? std::cout << result.value().first << " " << result.value().second << "\n" : std::cout << "Элемент не найден \n";
 	if (!stackPair.pop()) std::cout << "Стек пуст\n";
 
-	/*std::thread t1([&stack, &str1]() { for (int i = 0; i < 30; ++i) { stack.push("communist cat say mao mao"); } });
-	std::thread t2([&stack, &str2]() { for (int i = 0; i < 30; ++i) { stack.push("fox say ???"); } });
-	std::thread t3([&stack, &str3]() { for (int i = 0; i < 30; ++i) { stack.push("i say lalalalalalala"); } });*/
+	std::thread t1([&stack]() { for (int i = 0; i < 30; ++i) { stack.push("communist cat say mao mao"); } });
+	std::thread t2([&stack]() { for (int i = 0; i < 30; ++i) { stack.push("fox say ???"); } });
+	std::thread t3([&stack]() { for (int i = 0; i < 30; ++i) { stack.push("i say lalalalalalala"); } });
 
-	
+	t1.join();
+	t2.join();
+	t3.join();
+
+	std::cout << "size: " << stack.size() << "\n";
 }
 
