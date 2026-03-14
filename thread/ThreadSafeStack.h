@@ -1,18 +1,10 @@
-/*Ѕезопасный стек : –еализуйте класс ThreadSafeStack(на основе std::vector или std::stack)
-с операци€ми push и pop.«ащитите внутренние данные мьютексом.pop должен корректно обрабатывать случай пустого стека
-*/
-
-//std::optional<T> top() const должен делать возврат по ссылке, чтобы не было лишнего копировани€
-//потокобезопасность 
-
-
 #pragma once
 
 #include <vector>
 #include <optional>
 #include <utility>
 #include <mutex>
-#include <functional>
+
 
 template <typename T>
 class ThreadSafeStack
@@ -55,13 +47,6 @@ public:
 	{
 		std::lock_guard<std::mutex> lock(mutex);
 		return !values.empty() ? std::optional<T>(values.back()) : std::nullopt;
-	}
-
-	std::optional<std::reference_wrapper<const T>> top() const&& {
-		std::lock_guard<std::mutex> lock(mutex);
-		return !values.empty()
-			? std::optional<std::reference_wrapper<const T>>(std::cref(values.back()))
-			: std::nullopt;
 	}
 
 	bool empty() const noexcept
