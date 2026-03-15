@@ -1,9 +1,14 @@
 ﻿#include <iostream>
+#include <windows.h>
+
 #include "ThreadSafeStack.h"
 #include <thread>
 
 #include <mutex>
 #include <chrono>
+
+#include "ReadersWriter.h"
+#include <future>
 
 
 std::mutex mutex;
@@ -14,6 +19,9 @@ std::atomic<int> counterAtomic = 0;
 
 int main()
 {
+	SetConsoleOutputCP(1251);  
+	SetConsoleCP(1251);        
+
 	/*Задача 1.	Безопасный стек : 
 	 Реализуйте класс ThreadSafeStack
      (на основе std::vector или std::stack) с операциями push и pop.
@@ -113,5 +121,51 @@ int main()
 		Несколько потоков - «читателей» должны одновременно читать строку, 
 		а один поток - «писатель» — периодически ее менять.
 		Используйте std::shared_mutex(shared_lock для чтения, unique_lock для записи).*/ 
+
+	std::cout << "********** Задача 3 ********** \n";
+
+	ReadersWriter rw;
+	std::vector<std::string> dataRecords = { "record 3", "record 7", "record 2", "record 9", "record 5" };
+	std::vector<std::thread> threadPullReaders;
+	std::vector<std::future<std::string>> futuresRW;
+
+	
+	std::thread threadWriter([&dataRecords, &rw]() {
+	for (size_t i = 0; i < 20; ++i)
+	{
+		for (size_t j = 0; j < 5; ++j)
+		{
+			std::this_thread::sleep_for(std::chrono::microseconds(1));
+			rw.writer(dataRecords[j]);
+		}
+	}
+		});
+
+	
+	size_t countUser = 0;
+	for (size_t i = 0; i < 20; ++i)
+	{
+		for (size_t j = 0; j < 5; ++j)
+		{
+			std::this_thread::sleep_for(std::chrono::microseconds(1));
+			std::promise<std::string> promiseRW;
+			std::future<std::string> futureRW = promiseRW.get_future();
+			futuresRW.push_back(std::move(futureRW));
+			threadPullReaders.emplace_back([&rw, promiseRW = std::move(promiseRW)]() mutable { rw.reader(std::move(promiseRW)); });
+		}
+	}
+
+
+	threadWriter.join();
+
+	for (std::future<std::string>& future : futuresRW)
+	{
+		std::cout << "Отправляем данные пользователю " << ++countUser << ": " << future.get() << "\n";
+	}
+
+	for (std::thread &t : threadPullReaders)
+	{
+		t.join();
+	}
 }
 

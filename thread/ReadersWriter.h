@@ -3,12 +3,13 @@
 #include <thread>
 #include <string>
 #include <shared_mutex>
+#include <future>
 
 
 class ReadersWriter
 {
 private:
-	std::string tableOfRecords;
+	std::string tableOfRecords = "record 0";
 	mutable std::shared_mutex sharedMutex;
 
 	std::string read() const
@@ -24,13 +25,13 @@ private:
 	}
 
 public:
-	void writer()
+	void reader(std::promise<std::string>&& promise)
 	{
-
+		promise.set_value(read());
 	}
 
-	void reader()
+	void writer(const std::string& tableOfRecordsNew)
 	{
-
+		write(tableOfRecordsNew);
 	}
-}
+};
