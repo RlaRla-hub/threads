@@ -127,6 +127,7 @@
     <ClCompile Include="thread.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ReadersWriter.h" />
     <ClInclude Include="ThreadSafeStack.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

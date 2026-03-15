@@ -107,5 +107,11 @@ int main()
 
 	std::chrono::steady_clock::time_point endAtomic = std::chrono::steady_clock::now();
 	std::cout << "Time Atomic: " << std::chrono::duration_cast<std::chrono::milliseconds>(endAtomic - startAtomic).count() << "\n";
+
+
+	/*Задача 3.	Читатели и писатели(упрощенный) : Создайте общий ресурс(например, строку).
+		Несколько потоков - «читателей» должны одновременно читать строку, 
+		а один поток - «писатель» — периодически ее менять.
+		Используйте std::shared_mutex(shared_lock для чтения, unique_lock для записи).*/ 
 }
 
