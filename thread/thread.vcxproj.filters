@@ -18,12 +18,18 @@
     <ClCompile Include="thread.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
+    <ClCompile Include="asyncLeibniz.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ThreadSafeStack.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
     <ClInclude Include="ReadersWriter.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="asyncLeibniz.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
   </ItemGroup>

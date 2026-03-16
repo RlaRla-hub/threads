@@ -10,6 +10,8 @@
 #include "ReadersWriter.h"
 #include <future>
 
+#include "asyncLeibniz.h"
+
 
 std::mutex mutex;
 int counterMutex = 0;
@@ -167,5 +169,31 @@ int main()
 	{
 		t.join();
 	}
+
+	/* Задача 4. Асинхронное вычисление (std::async): Вычислите число π с помощью ряда Лейбница, 
+	разделив вычисления на несколько асинхронных задач. Соберите результаты с помощью std::future.*/
+
+	std::cout << "********** Задача 3 ********** \n";
+
+	//Последовательное вычисление
+	std::chrono::steady_clock::time_point startSeq = std::chrono::steady_clock::now();
+	double piSeq = leibniz(1'000'000'000, 1); 
+	std::chrono::steady_clock::time_point endSeq = std::chrono::steady_clock::now();
+	std::chrono::milliseconds timeSeq = std::chrono::duration_cast<std::chrono::milliseconds>(endSeq - startSeq);
+
+	//Асинхронное вычисление
+	std::chrono::steady_clock::time_point startAsync = std::chrono::steady_clock::now();
+	double piAsync = leibniz(1'000'000'000, 5);
+	std::chrono::steady_clock::time_point endAsync = std::chrono::steady_clock::now();
+	std::chrono::milliseconds timeAsync = std::chrono::duration_cast<std::chrono::milliseconds>(endAsync - startAsync);
+
+	std::cout << "Асинхронное Пи: " << piAsync << std::endl;
+	std::cout << std::endl;
+	std::cout << "Производительность:" << std::endl;
+	std::cout << "Последовательно: " << timeSeq.count() << " мс" << std::endl;
+	std::cout << "Асинхронно:      " << timeAsync.count() << " мс" << std::endl;
+
+	//при 1'000'000 последовательно выполнялось 3 мс, асинхронно 2 мс
+	//при 1'000'000'000 последовательно выполнялось 2529 мс, асинхронно 509 мс, при втором запуске 2537 мс и 510 мс
 }
 

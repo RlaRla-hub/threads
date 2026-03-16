@@ -124,9 +124,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="asyncLeibniz.cpp" />
     <ClCompile Include="thread.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="asyncLeibniz.h" />
     <ClInclude Include="ReadersWriter.h" />
     <ClInclude Include="ThreadSafeStack.h" />
   </ItemGroup>
