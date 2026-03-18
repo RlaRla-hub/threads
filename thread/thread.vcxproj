@@ -129,6 +129,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="asyncLeibniz.h" />
+    <ClInclude Include="ProducerConsumer.h" />
     <ClInclude Include="ReadersWriter.h" />
     <ClInclude Include="ThreadSafeStack.h" />
   </ItemGroup>
