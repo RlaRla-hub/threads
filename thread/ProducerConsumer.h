@@ -16,50 +16,46 @@ private:
 	std::condition_variable wt;
 	std::mutex mutex;
 
-	void produce(T value)
+	template <typename U>
+	void produce(U&& value, std::unique_lock<std::mutex>& lock)
 	{
-		std::unique_lock<std::mutex> lock(mutex);
-		if (values.size() >= sizeQueue)
-		{
-			wt.wait(lock, [this, value]() { return values.size() < sizeQueue; });
-		}
-		else
-		{
-			values.push(value);
-			wt.notify_one();
-		}
+		wt.wait(lock, [this]() { return values.size() < sizeQueue; });
+		values.push(std::forward<U>(value));
+		wt.notify_one();
 	}
 
-	T consume()
+	T consume(std::unique_lock<std::mutex>& lock)
 	{
-		std::unique_lock<std::mutex> lock(mutex);
-		if (values.empty())
-		{
-			wt.wait(lock, [this]() { return !values.empty(); });
-		}
-		else
-		{
-			T result = values.front();
-			values.pop();
-			wt.notify_one();
-			return result;
-		}
-
+		wt.wait(lock, [this]() { return !values.empty(); });
+		T result = std::move(values.front());
+		values.pop();
+		wt.notify_one();
+		return result;
 	}
 
 
 public:
-	ProducerConsumer(size_t sizeQueue) : sizeQueue(sizeQueue) {};
-
-	void producer(T& value)
-	{
-		produce(value);
-	}
+	explicit ProducerConsumer(size_t sizeQueue) : sizeQueue(sizeQueue) {};
 
 	template <typename U>
-	void consumer(U&& handler)
+	void producerValue(U&& value)
 	{
-		handler(consume());
+		std::unique_lock<std::mutex> lock(mutex);
+		produce(std::forward<U>(value), lock);
+	}
+
+	template <typename H>
+	void producerFunc(H&& handler)
+	{
+		std::unique_lock<std::mutex> lock(mutex);
+		produce(std::forward<H>(handler)(), lock);
+	}
+
+	template <typename H>
+	void consumer(H&& handler)
+	{
+		std::unique_lock<std::mutex> lock(mutex);
+		handler(consume(lock));
 	}
 
 };

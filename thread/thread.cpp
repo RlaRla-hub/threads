@@ -206,7 +206,63 @@ int main()
 
 	std::cout << "********** Задача 5 ********** \n";
 
-	ProducerConsumer<float> pcFloat(500);
-	ProducerConsumer<std::string> pcString(500);
+	ProducerConsumer<float> pcFloat(100);
+	ProducerConsumer<std::string> pcString(100);
+
+	pcFloat.producerValue(10.7f);           // добавим r-value
+	float x = 34.5;
+	pcFloat.producerValue(x);            // l-value
+	pcFloat.producerValue(std::move(x)); // добавим r-value с помощью перемещения
+
+	pcString.producerValue("maomao");           // добавим r-value
+	std::string str = "Hello, consumer";
+	pcString.producerValue(str);            // l-value
+	pcString.producerValue(std::move(str)); // добавим r-value с помощью перемещения
+
+	// Потребители
+	pcFloat.consumer([](float value) {
+		std::cout << "Получено float-значение: " << value << std::endl;
+		});
+
+	pcString.consumer([](std::string value) {
+		std::cout << "Получено string-значение: " << value << std::endl;
+		});
+
+	//Потребители, которые сохраняют результат
+	std::vector<float> resultsFloat;
+	pcFloat.consumer([&resultsFloat](float value) {
+		resultsFloat.push_back(value);
+		});
+
+	std::vector<std::string> resultsString;
+	pcString.consumer([&resultsString](std::string value) {
+		resultsString.push_back(value);
+		});
+
+	//тест с потоками и условными переменными 
+
+	ProducerConsumer<int> pcGen(10);
+
+	std::thread producerGen([&pcGen]() {
+		for (int i = 0; i < 30; i++) {
+			pcGen.producerFunc([i]() {
+				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+				std::cout << "Генерируем число: " << i * 10 << "\n";
+				return i * 10;
+				});
+		}
+		});
+
+	std::thread consumerGen([&pcGen]() {
+		for (int i = 0; i < 30; i++) {
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			pcGen.consumer([](int value) {
+				std::cout << "Получено от генератора: " << value << "\n";
+				});
+		}
+		});
+
+	producerGen.join();
+	consumerGen.join();
 }
 
