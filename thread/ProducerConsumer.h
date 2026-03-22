@@ -21,7 +21,7 @@ private:
 		std::unique_lock<std::mutex> lock(mutex);
 		if (values.size() >= sizeQueue)
 		{
-			wt.wait(lock);
+			wt.wait(lock, [this, value]() { return values.size() < sizeQueue; });
 		}
 		else
 		{
@@ -35,12 +35,14 @@ private:
 		std::unique_lock<std::mutex> lock(mutex);
 		if (values.empty())
 		{
-			wt.wait(lock);
+			wt.wait(lock, [this]() { return !values.empty(); });
 		}
 		else
 		{
+			T result = values.front();
 			values.pop();
-			wt.notify_all();
+			wt.notify_one();
+			return result;
 		}
 
 	}
