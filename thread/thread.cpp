@@ -14,6 +14,8 @@
 
 #include "ProducerConsumer.h"
 
+#include "RecursiveMutex.h"
+
 
 std::mutex mutex;
 int counterMutex = 0;
@@ -21,16 +23,17 @@ int counterMutex = 0;
 std::atomic<int> counterAtomic = 0;
 
 
+
 int main()
 {
-	SetConsoleOutputCP(1251);  
-	SetConsoleCP(1251);        
+	SetConsoleOutputCP(1251);
+	SetConsoleCP(1251);
 
-	/*Задача 1.	Безопасный стек : 
+	/*Задача 1.	Безопасный стек :
 	 Реализуйте класс ThreadSafeStack
-     (на основе std::vector или std::stack) с операциями push и pop.
-     Защитите внутренние данные мьютексом.
-     pop должен корректно обрабатывать случай пустого стека */
+	 (на основе std::vector или std::stack) с операциями push и pop.
+	 Защитите внутренние данные мьютексом.
+	 pop должен корректно обрабатывать случай пустого стека */
 
 	std::cout << "********** Задача 1 ********** \n";
 
@@ -42,7 +45,7 @@ int main()
 
 	stack.top() ? std::cout << *stack.top() << "\n" : std::cout << "Элемент не найден \n";
 	if (!stack.pop()) std::cout << "Стек пуст\n";
-	
+
 	stack.top() ? std::cout << *stack.top() << "\n" : std::cout << "Элемент не найден \n";
 	if (!stack.pop()) std::cout << "Стек пуст\n";
 
@@ -51,7 +54,7 @@ int main()
 
 	ThreadSafeStack<std::pair<float, std::string>> stackPair;
 
-	stackPair.push(std::make_pair(3.14f, "PI" ));
+	stackPair.push(std::make_pair(3.14f, "PI"));
 	std::optional<std::pair<float, std::string>> result = stackPair.top();
 	result ? std::cout << result.value().first << " " << result.value().second << "\n" : std::cout << "Элемент не найден \n";
 	if (!stackPair.pop()) std::cout << "Стек пуст\n";
@@ -71,23 +74,23 @@ int main()
 
 	std::cout << "size: " << stack.size() << "\n";
 
-	/*Задача 2.	
+	/*Задача 2.
 	  Создайте глобальный целочисленный счетчик, инициализированный нулем.
-      Запустите 100 потоков, каждый из которых увеличивает счетчик на 1 миллион раз.
-      Используйте std::mutex для защиты. Проверьте итоговое значение.
-      Решите задачу эту же задачу, но используйте std::atomic<int>.
-      Сравните производительность с мьютекс - версией.*/
+	  Запустите 100 потоков, каждый из которых увеличивает счетчик на 1 миллион раз.
+	  Используйте std::mutex для защиты. Проверьте итоговое значение.
+	  Решите задачу эту же задачу, но используйте std::atomic<int>.
+	  Сравните производительность с мьютекс - версией.*/
 
 	std::cout << "********** Задача 2 ********** \n";
 
 	std::chrono::steady_clock::time_point startMutex = std::chrono::steady_clock::now();
-	
+
 	std::vector<std::thread> threadPullMutex;
 	for (int i = 0; i < 100; ++i)
 	{
-		threadPullMutex.emplace_back([]() {std::lock_guard<std::mutex> lock(mutex); 
-		                                   std::this_thread::sleep_for(std::chrono::milliseconds(10));
-										   ++counterMutex; });
+		threadPullMutex.emplace_back([]() {std::lock_guard<std::mutex> lock(mutex);
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		++counterMutex; });
 	}
 
 	for (std::thread& t : threadPullMutex)
@@ -107,7 +110,7 @@ int main()
 	for (int i = 0; i < 100; ++i)
 	{
 		threadPullAtomic.emplace_back([]() {std::this_thread::sleep_for(std::chrono::milliseconds(10));
-		                                    ++counterAtomic; });
+		++counterAtomic; });
 	}
 
 	for (std::thread& t : threadPullAtomic)
@@ -122,9 +125,9 @@ int main()
 
 
 	/*Задача 3.	Читатели и писатели(упрощенный) : Создайте общий ресурс(например, строку).
-		Несколько потоков - «читателей» должны одновременно читать строку, 
+		Несколько потоков - «читателей» должны одновременно читать строку,
 		а один поток - «писатель» — периодически ее менять.
-		Используйте std::shared_mutex(shared_lock для чтения, unique_lock для записи).*/ 
+		Используйте std::shared_mutex(shared_lock для чтения, unique_lock для записи).*/
 
 	std::cout << "********** Задача 3 ********** \n";
 
@@ -133,19 +136,19 @@ int main()
 	std::vector<std::thread> threadPullReaders;
 	std::vector<std::future<std::string>> futuresRW;
 
-	
+
 	std::thread threadWriter([&dataRecords, &rw]() {
-	for (size_t i = 0; i < 20; ++i)
-	{
-		for (size_t j = 0; j < 5; ++j)
+		for (size_t i = 0; i < 20; ++i)
 		{
-			std::this_thread::sleep_for(std::chrono::microseconds(1));
-			rw.writer(dataRecords[j]);
+			for (size_t j = 0; j < 5; ++j)
+			{
+				std::this_thread::sleep_for(std::chrono::microseconds(1));
+				rw.writer(dataRecords[j]);
+			}
 		}
-	}
 		});
 
-	
+
 	size_t countUser = 0;
 	for (size_t i = 0; i < 20; ++i)
 	{
@@ -167,19 +170,19 @@ int main()
 		std::cout << "Отправляем данные пользователю " << ++countUser << ": " << future.get() << "\n";
 	}
 
-	for (std::thread &t : threadPullReaders)
+	for (std::thread& t : threadPullReaders)
 	{
 		t.join();
 	}
 
-	/* Задача 4. Асинхронное вычисление (std::async): Вычислите число π с помощью ряда Лейбница, 
+	/* Задача 4. Асинхронное вычисление (std::async): Вычислите число π с помощью ряда Лейбница,
 	разделив вычисления на несколько асинхронных задач. Соберите результаты с помощью std::future.*/
 
 	std::cout << "********** Задача 4 ********** \n";
 
 	//Последовательное вычисление
 	std::chrono::steady_clock::time_point startSeq = std::chrono::steady_clock::now();
-	double piSeq = leibniz(1'000'000'000, 1); 
+	double piSeq = leibniz(1'000'000'000, 1);
 	std::chrono::steady_clock::time_point endSeq = std::chrono::steady_clock::now();
 	std::chrono::milliseconds timeSeq = std::chrono::duration_cast<std::chrono::milliseconds>(endSeq - startSeq);
 
@@ -199,9 +202,9 @@ int main()
 	//при 1'000'000'000 последовательно выполнялось 2529 мс, асинхронно 509 мс, при втором запуске 2537 мс и 510 мс
 
 
-	/* Задача 5. Producer-Consumer (очередь задач): Реализуйте классический шаблон. 
-	Потоки-Producers генерируют случайные числа и кладут их в очередь. 
-	Потоки-Consumers забирают числа из очереди и выводят их. 
+	/* Задача 5. Producer-Consumer (очередь задач): Реализуйте классический шаблон.
+	Потоки-Producers генерируют случайные числа и кладут их в очередь.
+	Потоки-Consumers забирают числа из очереди и выводят их.
 	Используйте std::queue, ограничьте размер очереди.*/
 
 	std::cout << "********** Задача 5 ********** \n";
@@ -264,5 +267,20 @@ int main()
 
 	producerGen.join();
 	consumerGen.join();
+
+	/*Задача 6. Рекурсивный мьютекс : Создайте класс, методы которого A() и B() должны быть потокобезопасны.
+		Метод A() внутри вызывает B().Используйте std::recursive_mutex для защиты.*/
+
+	std::cout << "********** Задача 5 ********** \n";
+
+	RecursiveMutex RM;
+	std::thread threadRecursiveMutex(&RecursiveMutex::A, &RM);
+	std::thread threadRecursiveMutex2(&RecursiveMutex::A, &RM);
+
+	threadRecursiveMutex.join();
+	threadRecursiveMutex2.join();
+
+
+
 }
 

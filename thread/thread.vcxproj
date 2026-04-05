@@ -131,6 +131,7 @@
     <ClInclude Include="asyncLeibniz.h" />
     <ClInclude Include="ProducerConsumer.h" />
     <ClInclude Include="ReadersWriter.h" />
+    <ClInclude Include="RecursiveMutex.h" />
     <ClInclude Include="ThreadSafeStack.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
