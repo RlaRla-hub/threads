@@ -16,6 +16,8 @@
 
 #include "RecursiveMutex.h"
 
+#include "ThreadSafeUnorderedMap.h"
+
 
 std::mutex mutex;
 int counterMutex = 0;
@@ -271,7 +273,7 @@ int main()
 	/*Задача 6. Рекурсивный мьютекс : Создайте класс, методы которого A() и B() должны быть потокобезопасны.
 		Метод A() внутри вызывает B().Используйте std::recursive_mutex для защиты.*/
 
-	std::cout << "********** Задача 5 ********** \n";
+	std::cout << "********** Задача 6 ********** \n";
 
 	RecursiveMutex RM;
 	std::thread threadRecursiveMutex(&RecursiveMutex::A, &RM);
@@ -280,6 +282,21 @@ int main()
 	threadRecursiveMutex.join();
 	threadRecursiveMutex2.join();
 
+
+	/*Задача 7. Реализация потокобезопасного unordered_map*/
+
+	std::cout << "********** Задача 7 ********** \n";
+
+	UnorderedMap<std::string, std::string> map(10);
+
+	map.insert("Alice", "password");
+	map.insert("USSR", "ne_discha_ne_spescha");
+
+	std::cout << map.find("Alice").value_or("Notvalue") << "\n";
+	std::cout << map.find("USSR").value_or("Notvalue") << "\n";
+
+	map.erase("Alice");
+	std::cout<<map.find("Alice").value_or("Notvalue")<<"\n";
 
 
 }

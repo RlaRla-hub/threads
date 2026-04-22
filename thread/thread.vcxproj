@@ -133,6 +133,7 @@
     <ClInclude Include="ReadersWriter.h" />
     <ClInclude Include="RecursiveMutex.h" />
     <ClInclude Include="ThreadSafeStack.h" />
+    <ClInclude Include="ThreadSafeUnorderedMap.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
