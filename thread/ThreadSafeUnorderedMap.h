@@ -56,7 +56,6 @@ public:
 
 	ThreadSafeUnorderedMap(size_t bucketCount_)
 	{
-		std::unique_lock<std::shared_mutex> lock(mutex);
 		(bucketCount_ == 0) ? (bucketCount = 1) : (bucketCount = bucketCount_);
 		buckets.resize(bucketCount);
 	}
@@ -119,16 +118,19 @@ public:
 
 	size_t getBucketCount()
 	{
+		std::lock_guard<std::shared_mutex> lock(mutex);
 		return bucketCount;
 	}
 
 	size_t getSize()
 	{
+		std::lock_guard<std::shared_mutex> lock(mutex);
 		return size;
 	}
 
 	void clear()
 	{
+		std::unique_lock<std::shared_lock> lock(mutex);
 		for (size_t i = 0; i < buckets.size(); ++i)
 		{
 			if (buckets[i] == nullptr)
@@ -152,6 +154,7 @@ public:
 
 	bool empty()
 	{
+		std::lock_guard<std::shared_mutex> lock(mutex);
 		if (size == 0)
 		{
 			return true;
