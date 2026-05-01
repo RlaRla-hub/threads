@@ -287,7 +287,7 @@ int main()
 
 	std::cout << "********** Задача 7 ********** \n";
 
-	UnorderedMap<std::string, std::string> map(10);
+	ThreadSafeUnorderedMap<std::string, std::string> map(10);
 
 	map.insert("Alice", "password");
 	map.insert("USSR", "ne_discha_ne_spescha");

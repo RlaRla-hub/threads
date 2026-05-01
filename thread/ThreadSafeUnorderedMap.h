@@ -1,51 +1,78 @@
-#pragma once
+#include<iostream>
+#include<vector>
+#include<optional>
+#include<memory>
+#include<thread>
+#include<mutex>
+#include<shared_mutex>
+#include<unordered_map>
 
-#include <iostream>
-#include <vector>
-#include <optional>
-#include <memory>
 
-
-template<typename Key, typename Value>
-class UnorderedMap
+template <typename Key, typename Value>
+class ThreadSafeUnorderedMap
 {
 private:
 
+	std::shared_mutex mutex;
+
 	struct Node
 	{
-	Key key;
-	Value value;
-	std::unique_ptr<Node> next;
+		Key key;
+		Value value;
+		std::unique_ptr<Node> next;
 
-	Node(Key key_,Value value_,std::unique_ptr<Node> next_) : key(key_), value(value_), next(std::move(next_)) {}
+		Node(Key key_, Value value_, std::unique_ptr<Node> next_) : key(key_), value(value_), next(std::move(next_)) {}
 	};
 
 	std::vector<std::unique_ptr<Node>> buckets;
-	size_t numBuckets;
+	size_t bucketCount;
+	size_t size = 0;
 
 	size_t makeHash(const Key& key)
 	{
 		std::hash<Key> hasher;
-		return hasher(key) % numBuckets;
+		return hasher(key) % bucketCount;
+	}
+
+	std::optional<Value> findKey(const Key& key)
+	{
+		size_t num = makeHash(key);
+		Node* temp = buckets[num].get();
+
+		while (temp != nullptr)
+		{
+			if (temp->key == key)
+			{
+				return temp->value;
+			}
+			temp = temp->next.get();
+		}
+
+		return std::nullopt;
 	}
 
 
 public:
 
-	UnorderedMap(size_t size) :numBuckets(size)
+	ThreadSafeUnorderedMap(size_t bucketCount_)
 	{
-		buckets.resize(numBuckets);
+		std::unique_lock<std::shared_mutex> lock(mutex);
+		(bucketCount_ == 0) ? (bucketCount = 1) : (bucketCount = bucketCount_);
+		buckets.resize(bucketCount);
 	}
 
 	template <typename V>
-	void operator[](const V&& value)
+	void operator[](const Key& key)
 	{
 
 	}
 
+
 	void insert(const Key& key, const Value& value)
 	{
-		if (this->find(key).has_value())
+		std::unique_lock<std::shared_mutex> lock(mutex);
+
+		if (this->findKey(key).has_value())
 		{
 			return;
 		}
@@ -53,10 +80,12 @@ public:
 		size_t num = makeHash(key);
 		std::unique_ptr<Node> node = std::make_unique<Node>(key, value, std::move(buckets[num]));
 		buckets[num] = std::move(node);
+		++size;
 	}
 
 	void erase(const Key& key)
 	{
+		std::unique_lock<std::shared_mutex> lock(mutex);
 
 		size_t num = makeHash(key);
 		Node* temp = buckets[num].get();
@@ -74,7 +103,7 @@ public:
 				{
 					buckets[num] = std::move(temp->next);
 				}
-				return;
+				break;
 			}
 			prev = temp;
 			temp = temp->next.get();
@@ -83,19 +112,54 @@ public:
 
 	std::optional<Value> find(const Key& key)
 	{
-		size_t num = makeHash(key);
-		Node* temp = buckets[num].get();
+		std::lock_guard<std::shared_mutex> lock(mutex);
 
-		while (temp != nullptr)
+		return findKey(key);
+	}
+
+	size_t getBucketCount()
+	{
+		return bucketCount;
+	}
+
+	size_t getSize()
+	{
+		return size;
+	}
+
+	void clear()
+	{
+		for (size_t i = 0; i < buckets.size(); ++i)
 		{
-			if (temp->key == key)
+			if (buckets[i] == nullptr)
 			{
-				return temp->value;
+				continue;
 			}
-			temp = temp->next.get();
-		}
 
-		return std::nullopt;
+			std::unique_ptr<Node> oldTemp = std::move(buckets[i]);
+			std::unique_ptr<Node> temp = std::move(oldTemp->next);
+
+			do
+			{
+				oldTemp.reset();
+				oldTemp = std::move(temp);
+				(oldTemp != nullptr) ? (temp = std::move(oldTemp->next)) : (temp = nullptr);
+
+			} while (temp != nullptr);
+
+		}
+	}
+
+	bool empty()
+	{
+		if (size == 0)
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
 	}
 
 };
