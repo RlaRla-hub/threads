@@ -13,7 +13,7 @@ class ThreadSafeUnorderedMap
 {
 private:
 
-	std::shared_mutex mutex;
+	mutable std::shared_mutex mutex;
 
 	struct Node
 	{
@@ -28,16 +28,18 @@ private:
 	size_t bucketCount;
 	size_t size = 0;
 
-	size_t makeHash(const Key& key)
+	template <typename K>
+	size_t makeHash(K&& key) const
 	{
-		std::hash<Key> hasher;
-		return hasher(key) % bucketCount;
+		std::hash<std::decay_t<K>> hasher;
+		return hasher(std::forward<K>(key)) % bucketCount;
 	}
 
-	std::optional<Value> findKey(const Key& key)
+	template <typename K>
+	std::optional<Value> findKey(K&& key) 
 	{
 		size_t num = makeHash(key);
-		Node* temp = buckets[num].get();
+	    Node* temp = buckets[num].get();
 
 		while (temp != nullptr)
 		{
@@ -67,32 +69,34 @@ public:
 	}
 
 
-	void insert(const Key& key, const Value& value)
+	template <typename K, typename V>
+	void insert(K& key, V& value)
 	{
 		std::unique_lock<std::shared_mutex> lock(mutex);
 
-		if (this->findKey(key).has_value())
+		if (this->findKey(std::forward<K>(key)).has_value())
 		{
 			return;
 		}
 
-		size_t num = makeHash(key);
-		std::unique_ptr<Node> node = std::make_unique<Node>(key, value, std::move(buckets[num]));
+		size_t num = makeHash(std::forward<K>(key));
+		std::unique_ptr<Node> node = std::make_unique<Node>(std::forward<K>(key), std::forward<V>(value), std::move(buckets[num]));
 		buckets[num] = std::move(node);
 		++size;
 	}
 
-	void erase(const Key& key)
+	template <typename K>
+	void erase(K&& key)
 	{
 		std::unique_lock<std::shared_mutex> lock(mutex);
 
-		size_t num = makeHash(key);
+		size_t num = makeHash(std::forward<K>(key));
 		Node* temp = buckets[num].get();
 		Node* prev = nullptr;
 
 		while (temp != nullptr)
 		{
-			if (temp->key == key)
+			if (temp->key == std::forward<K>(key))
 			{
 				if (prev)
 				{
@@ -109,28 +113,29 @@ public:
 		}
 	}
 
-	std::optional<Value> find(const Key& key)
+	template <typename K>
+	std::optional<Value> find(K&& key) 
 	{
 		std::lock_guard<std::shared_mutex> lock(mutex);
 
 		return findKey(key);
 	}
 
-	size_t getBucketCount()
+	size_t getBucketCount() const
 	{
 		std::lock_guard<std::shared_mutex> lock(mutex);
 		return bucketCount;
 	}
 
-	size_t getSize()
+	size_t getSize() const
 	{
 		std::lock_guard<std::shared_mutex> lock(mutex);
 		return size;
 	}
 
-	void clear()
+	void clear() 
 	{
-		std::unique_lock<std::shared_lock> lock(mutex);
+		std::unique_lock<std::shared_mutex> lock(mutex);
 		for (size_t i = 0; i < buckets.size(); ++i)
 		{
 			if (buckets[i] == nullptr)
@@ -152,7 +157,7 @@ public:
 		}
 	}
 
-	bool empty()
+	bool empty() const
 	{
 		std::lock_guard<std::shared_mutex> lock(mutex);
 		if (size == 0)
